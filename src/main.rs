@@ -1,11 +1,9 @@
 mod cli;
-mod processor;
-mod sourcemap_handler;
 
 use anyhow::Result;
 use clap::Parser;
 use cli::Cli;
-use processor::process_folder;
+use source_map_deobfuscate_tool::process_folder;
 
 #[tokio::main(flavor = "multi_thread")]
 async fn main() -> Result<()> {

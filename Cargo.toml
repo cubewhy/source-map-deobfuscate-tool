@@ -1,5 +1,5 @@
 [package]
-name = "source_map_deobfuscate_tool"
+name = "source-map-deobfuscate-tool"
 version = "0.1.0"
 edition = "2024"
 
