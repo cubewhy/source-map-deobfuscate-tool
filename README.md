@@ -3,7 +3,7 @@
 ## Usage
 
 ```shell
-source_map_deobfuscate_tool --input-dir <in-dir> --output-dir <output-dir>
+source-map-deobfuscate-tool --input-dir <in-dir> --output-dir <output-dir>
 ```
 
 ## License
