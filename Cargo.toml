@@ -3,7 +3,7 @@ name = "source-map-deobfuscate-tool"
 version = "0.1.0"
 edition = "2024"
 description = "A tool for deobfuscating source maps"
-license = "GPLv3"
+license-file = "LICENSE"
 
 [dependencies]
 clap = { version = "4.5", features = ["derive"] }
