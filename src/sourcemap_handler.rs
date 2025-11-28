@@ -2,16 +2,11 @@ use anyhow::Result;
 use sourcemap::SourceMap;
 use std::{
     collections::HashMap,
-    path::{Path, PathBuf},
+    path::{Component, Path, PathBuf},
 };
 use tokio::fs;
 
-pub async fn deobfuscate_file_optimized(
-    js_path: &Path,
-    map_path: &Path,
-    output_path: &str,
-) -> Result<()> {
-    let _js_code = fs::read_to_string(js_path).await?;
+pub async fn deobfuscate_file_optimized(map_path: &Path, output_path: &str) -> Result<()> {
     let map_data = fs::read(map_path).await?;
     let sm = SourceMap::from_slice(&map_data)?;
 
@@ -27,6 +22,7 @@ pub async fn deobfuscate_file_optimized(
 
     for (file_name, content) in processed_files {
         let mut file_path = PathBuf::from(output_path);
+        let file_name = flat_filename_deep(&file_name);
         file_path.push(&file_name);
 
         if let Some(parent) = file_path.parent() {
@@ -40,4 +36,18 @@ pub async fn deobfuscate_file_optimized(
     }
 
     Ok(())
+}
+
+fn flat_filename_deep(path: &str) -> String {
+    let mut result = PathBuf::new();
+
+    for component in Path::new(path).components() {
+        match component {
+            Component::ParentDir => {}
+            Component::Normal(c) => result.push(c),
+            _ => {}
+        }
+    }
+
+    result.to_string_lossy().to_string()
 }

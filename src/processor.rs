@@ -13,11 +13,8 @@ pub async fn process_folder(input_dir: &str, output_dir: &str) -> Result<()> {
 
     for entry in WalkDir::new(input_dir).into_iter().filter_map(Result::ok) {
         let path = entry.path().to_path_buf();
-        if path.extension().map(|ext| ext == "js").unwrap_or(false) {
-            let map_path = path.with_extension("js.map");
-            if map_path.exists() {
-                jobs.push((path, map_path));
-            }
+        if path.extension().map(|ext| ext == "map").unwrap_or(false) {
+            jobs.push(path);
         }
     }
 
@@ -29,17 +26,17 @@ pub async fn process_folder(input_dir: &str, output_dir: &str) -> Result<()> {
 
     let tasks: Vec<_> = jobs
         .into_iter()
-        .map(|(js_path, map_path)| {
+        .map(|map_path| {
             let pb = pb.clone();
             let output_dir = output_dir.to_string();
             tokio::spawn(async move {
-                match deobfuscate_file_optimized(&js_path, &map_path, &output_dir).await {
+                match deobfuscate_file_optimized(&map_path, &output_dir).await {
                     Ok(_) => {
                         pb.inc(1);
                         Ok(())
                     }
                     Err(e) => {
-                        eprintln!("{} {js_path:?}: {e}", "[error]".red());
+                        eprintln!("{} {map_path:?}: {e}", "[error]".red());
                         pb.inc(1);
                         Err(e)
                     }
