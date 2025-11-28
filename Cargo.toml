@@ -1,6 +1,6 @@
 [package]
 name = "source-map-deobfuscate-tool"
-version = "0.1.0"
+version = "0.2.0"
 edition = "2024"
 description = "A tool for deobfuscating source maps"
 license-file = "LICENSE"
