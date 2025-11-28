@@ -18,10 +18,10 @@ pub async fn deobfuscate_file_optimized(
     let mut processed_files: HashMap<String, String> = HashMap::new();
 
     for source_id in 0..sm.get_source_count() {
-        if let Some(source_name) = sm.get_source(source_id) {
-            if let Some(source_content) = sm.get_source_contents(source_id) {
-                processed_files.insert(source_name.to_string(), source_content.to_string());
-            }
+        if let Some(source_name) = sm.get_source(source_id)
+            && let Some(source_content) = sm.get_source_contents(source_id)
+        {
+            processed_files.insert(source_name.to_string(), source_content.to_string());
         }
     }
 
