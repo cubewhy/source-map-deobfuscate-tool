@@ -3,7 +3,7 @@
 ## Usage
 
 ```shell
-source-map-deobfuscate-tool --input-dir <in-dir> --output-dir <output-dir>
+jsmap-deobf --input-dir <in-dir> --output-dir <output-dir>
 ```
 
 ## License
