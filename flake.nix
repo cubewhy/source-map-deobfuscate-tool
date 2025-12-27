@@ -1,5 +1,5 @@
 {
-  description = "A Nix-flake-based Rust development environment";
+  description = "Rust cross-compile";
 
   inputs = {
     fenix = {
@@ -21,45 +21,64 @@
     naersk,
     nixpkgs,
   }:
-    flake-utils.lib.eachDefaultSystem (system: {
-      packages.default = let
+    flake-utils.lib.eachDefaultSystem (
+      system: let
         pkgs = nixpkgs.legacyPackages.${system};
-        target = "x86_64-pc-windows-gnu";
+        targetWin = "x86_64-pc-windows-gnu";
 
-        # Cross-compilation toolchain components
-        pkgsCross = pkgs.pkgsCross.mingwW64;
-        cc = pkgsCross.stdenv.cc;
+        pkgsCrossWin = pkgs.pkgsCross.mingwW64;
+        ccWin = pkgsCrossWin.stdenv.cc;
+        pthreadsWin = pkgsCrossWin.windows.pthreads;
 
-        # Workaround: Rust expects libpthread.a, but MinGW provides libwinpthread.a
-        # We create a derivation that symlinks the library to the expected name.
-        pthreads = pkgsCross.windows.pthreads;
         libpthread-workaround = pkgs.runCommand "libpthread-workaround" {} ''
           mkdir -p $out/lib
-          ln -s ${pthreads}/lib/libwinpthread.a $out/lib/libpthread.a
+          ln -s ${pthreadsWin}/lib/libwinpthread.a $out/lib/libpthread.a
         '';
 
         toolchain = with fenix.packages.${system};
           combine [
             minimal.cargo
             minimal.rustc
-            targets.${target}.latest.rust-std
+            targets.${system}.latest.rust-std
+            targets.${targetWin}.latest.rust-std
           ];
-      in
-        (naersk.lib.${system}.override {
+
+        naersk-lib = naersk.lib.${system}.override {
           cargo = toolchain;
           rustc = toolchain;
-        }).buildPackage {
+        };
+
+        commonAttrs = {
           src = ./.;
+        };
+      in {
+        packages = {
+          default = naersk-lib.buildPackage (commonAttrs
+            // {
+              strictDeps = true;
+            });
 
-          CARGO_BUILD_TARGET = target;
-          CARGO_TARGET_X86_64_PC_WINDOWS_GNU_LINKER = "${cc}/bin/${cc.targetPrefix}cc";
+          windows = naersk-lib.buildPackage (commonAttrs
+            // {
+              CARGO_BUILD_TARGET = targetWin;
+              CARGO_TARGET_X86_64_PC_WINDOWS_GNU_LINKER = "${ccWin}/bin/${ccWin.targetPrefix}cc";
+              RUSTFLAGS = "-L native=${libpthread-workaround}/lib";
+              depsBuildBuild = [ccWin];
+              buildInputs = [pthreadsWin];
+            });
+        };
 
-          # Add the workaround library to the search path
+        devShells.default = pkgs.mkShell {
+          nativeBuildInputs = [toolchain];
+
+          buildInputs = [pthreadsWin];
+
+          CARGO_TARGET_X86_64_PC_WINDOWS_GNU_LINKER = "${ccWin}/bin/${ccWin.targetPrefix}cc";
+
           RUSTFLAGS = "-L native=${libpthread-workaround}/lib";
 
-          # Ensure the compiler and standard windows libs are available
-          depsBuildBuild = [cc];
-          buildInputs = [pthreads];
+          LD_LIBRARY_PATH = pkgs.lib.makeLibraryPath [pkgs.stdenv.cc.cc.lib];
         };
-    });
+      }
+    );
 }
